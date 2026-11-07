@@ -91,8 +91,8 @@ for (const fr of plan) {
     if (fr.card && !document.querySelector(".card")) {
       document.querySelector(".v.bot").style.display = "none";
       document.body.insertAdjacentHTML("beforeend", `<div class="card"><div class="q">Saves the village?</div>
-        <p>Only partly. Each extra home-office day pulls more of Brandenburg within reach, but many empty homes sit where no train gets
-        you to Berlin by 9:00, and an empty home is not automatically one you can rent.</p>
+        <p>Only partly. Each extra home-office day pulls more of Brandenburg within reach, but many empty homes sit far from a fast
+        train to Berlin, and an empty home is not automatically one you can rent.</p>
         <div class="url">Try your own week · barisparlatangiller.github.io</div>
         <div class="att">Zensus 2022 © Destatis · VG250 © GeoBasis-DE/BKG · timetable © VBB · © CARTO, © OpenStreetMap contributors</div></div>`);
     }

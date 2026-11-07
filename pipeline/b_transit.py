@@ -20,7 +20,7 @@ import requests
 IN, B = Path("input"), Path("build")
 GTFS_URL = "https://www.vbb.de/vbbgtfs"
 ARRIVE = 9 * 3600
-EARLIEST = 4 * 3600 + 30 * 60
+EARLIEST = 4 * 3600
 CHANGE = 180
 TARGETS = r"^S\+U Berlin Hauptbahnhof|^S\+U Friedrichstr|^S\+U Alexanderplatz|^S\+U Potsdamer Platz|^S\+U Zoologischer Garten"
 
@@ -69,27 +69,37 @@ def main():
     tr_codes, tr = np.unique(c.trip.values, return_inverse=True)
     dep = c.dep.values.astype(np.int64); arr = c.arr.values.astype(np.int64)
     names = stops.drop_duplicates("sta").set_index("sta").reindex(sta_ids)
-    S = np.full(len(sta_ids), -1, dtype=np.int64)                          # latest time to be at a station (−1 = cannot)
     tgt = names.stop_name.fillna("").str.contains(TARGETS, regex=True).values
-    S[tgt] = ARRIVE + CHANGE                                               # arriving there is enough, no change needed
     print("targets:", sorted(set(names.stop_name[tgt])), flush=True)
-    onboard = np.zeros(len(tr_codes), dtype=bool)
-    for k in range(len(dep)):                                              # reverse connection scan
-        t = tr[k]
-        if onboard[t] or arr[k] + CHANGE <= S[ti[k]]:
-            onboard[t] = True
-            v = dep[k]
-            if v > S[fi[k]]:
-                S[fi[k]] = v
+    # The shortest trip that arrives within the morning window: one reverse scan per arrival deadline (every 5 min,
+    # 6:30–9:00); travel time = deadline − latest departure, minimum over all deadlines (so waiting at the destination
+    # for a late deadline does not count).
+    best = np.full(len(sta_ids), np.inf)
+    for dl in range(ARRIVE - 150 * 60, ARRIVE + 1, 300):
+        S = np.full(len(sta_ids), -1, dtype=np.int64)
+        S[tgt] = dl + CHANGE
+        onboard = np.zeros(len(tr_codes), dtype=bool)
+        for k in np.flatnonzero(arr <= dl):                               # connections are sorted by departure, latest first
+            t = tr[k]
+            if onboard[t] or arr[k] + CHANGE <= S[ti[k]]:
+                onboard[t] = True
+                if dep[k] > S[fi[k]]:
+                    S[fi[k]] = dep[k]
+        ok = S >= 0
+        best[ok] = np.minimum(best[ok], (dl - S[ok]) / 60)
+    best[tgt] = 0
+    S = np.where(np.isfinite(best), 0, -1)
     reach = S >= 0
     out = pd.DataFrame({"sta": sta_ids[reach], "name": names.stop_name.values[reach],
                         "lat": names.stop_lat.astype(float).values[reach], "lon": names.stop_lon.astype(float).values[reach],
-                        "min": np.where(tgt[reach], 0, (ARRIVE - (S[reach] - 0)) / 60).round(1)})
+                        "min": np.maximum(best[reach], 0).round(1)})
     out.loc[out["min"] < 0, "min"] = 0
     out.to_parquet(B / "stations.parquet")
     print(f"stations that reach central Berlin by 9:00: {len(out):,}")
-    for nm in ["S Potsdam Hauptbahnhof", "S Oranienburg", "Fürstenwalde, Bahnhof", "S Eberswalde", "Cottbus, Hauptbahnhof", "Frankfurt (Oder), Bahnhof", "Brandenburg, Hauptbahnhof", "Wittenberge, Bahnhof", "Prenzlau, Bahnhof", "Angermünde, Bahnhof"]:
-        r = out[out.name.str.contains(re.escape(nm), regex=True)].sort_values("min").head(1)
+    far = out[~out.name.str.contains("(Berlin)", regex=False)]
+    for nm in ["Potsdam Hauptbahnhof", "Falkensee", "Bernau", "Oranienburg", "Königs Wusterhausen", "Strausberg", "Nauen", "Fürstenwalde",
+               "Eberswalde", "Brandenburg, Hauptbahnhof", "Frankfurt (Oder)", "Cottbus", "Angermünde", "Wittenberge", "Prenzlau"]:
+        r = far[far.name.str.contains(re.escape(nm), regex=True)].sort_values("min").head(1)
         if len(r): print(f"  {r.name.iloc[0]}: {r['min'].iloc[0]:.0f} min")
 
 

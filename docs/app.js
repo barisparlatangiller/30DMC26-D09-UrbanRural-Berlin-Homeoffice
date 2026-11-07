@@ -87,7 +87,7 @@ async function init() {
         const p = e.features[0].properties;
         new maplibregl.Popup({ offset: 6 }).setLngLat(e.lngLat).setHTML(`<b>${p.g}</b><br>${fmt(p.dw)} homes in this km²<br>
           ${p.q != null ? `${p.q} % empty (≈ ${fmt(p.v)})` : "vacancy rate not published"}${p.qm != null ? ` · ${p.qm} % on the market (≈ ${fmt(p.vm)})` : ""}<br>
-          ${p.t != null ? `${p.t} min to central Berlin by 9:00, via ${p.s}` : "no train or bus to central Berlin by 9:00 in reach"}`).addTo(map);
+          ${p.t != null ? `${p.t} min to central Berlin via ${p.s}` : "no train or bus to central Berlin in reach on a weekday morning"}`).addTo(map);
       });
       map.on("mouseenter", "c", () => (map.getCanvas().style.cursor = "pointer"));
       map.on("mouseleave", "c", () => (map.getCanvas().style.cursor = ""));
