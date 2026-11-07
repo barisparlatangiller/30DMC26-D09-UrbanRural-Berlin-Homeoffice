@@ -12,6 +12,7 @@ import json, time
 from pathlib import Path
 
 import geopandas as gpd
+import pandas as pd
 import numpy as np
 from scipy.spatial import cKDTree
 
@@ -19,7 +20,7 @@ B, D, W = Path("build"), Path("data"), Path("docs/data")
 W.mkdir(parents=True, exist_ok=True)
 
 c = gpd.read_parquet(B / "cells.parquet")
-s = gpd.read_parquet(B / "stations.parquet")
+s = pd.read_parquet(B / "stations.parquet")
 sg = gpd.GeoDataFrame(s, geometry=gpd.points_from_xy(s.lon, s.lat), crs=4326).to_crs(3035)
 tree = cKDTree(np.c_[sg.geometry.x, sg.geometry.y])
 cx = np.c_[c.centroid.x, c.centroid.y]

@@ -88,7 +88,7 @@ def main():
     out.loc[out["min"] < 0, "min"] = 0
     out.to_parquet(B / "stations.parquet")
     print(f"stations that reach central Berlin by 9:00: {len(out):,}")
-    for nm in ["Potsdam Hbf", "Oranienburg", "Fürstenwalde", "Eberswalde", "Cottbus", "Frankfurt (Oder)", "Brandenburg, Hbf", "Wittenberge", "Prenzlau", "Angermünde"]:
+    for nm in ["S Potsdam Hauptbahnhof", "S Oranienburg", "Fürstenwalde, Bahnhof", "S Eberswalde", "Cottbus, Hauptbahnhof", "Frankfurt (Oder), Bahnhof", "Brandenburg, Hauptbahnhof", "Wittenberge, Bahnhof", "Prenzlau, Bahnhof", "Angermünde, Bahnhof"]:
         r = out[out.name.str.contains(re.escape(nm), regex=True)].sort_values("min").head(1)
         if len(r): print(f"  {r.name.iloc[0]}: {r['min'].iloc[0]:.0f} min")
 

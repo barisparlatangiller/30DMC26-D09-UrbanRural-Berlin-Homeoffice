@@ -7,6 +7,7 @@ const fmt = n => Math.round(n).toLocaleString("en-GB");
 const S = { ho: 3, hr: 16, m: "v", fc: null, map: null, sel: null };
 
 function maxMinutes() {                                               // one-way door-to-centre minutes that fit the budget
+  if (S.limOverride != null) return S.limOverride;
   const office = 5 - S.ho;
   return office <= 0 ? Infinity : S.hr * 60 / (2 * office * 4.33);
 }
@@ -45,13 +46,14 @@ function render() {
   $("#top").innerHTML = `<tr><th>Municipality</th><th>${S.m === "v" ? "empty" : "on market"}</th><th>min to centre</th></tr>` +
     top.map(([a, g]) => { const t = g.t.sort((x, y) => x - y)[Math.floor(g.t.length / 2)]; return `<tr data-a="${a}"><td>${g.name}</td><td>${fmt(g.n)}</td><td>${t ?? "–"}</td></tr>`; }).join("");
   $("#top").querySelectorAll("tr[data-a]").forEach(tr => tr.onclick = () => zoomTo(tr.dataset.a));
-  if (S.map && S.map.getSource("c")) { S.map.getSource("c").setData(S.fc); S.map.setPaintProperty("c", "fill-color", color()); }
+  if (S.map && S.map.getLayer("c")) S.map.setPaintProperty("c", "fill-color", color(r.lim));
   legend(r);
 }
 
-function color() {
+function color(lim = maxMinutes()) {
   const v = ["coalesce", ["get", S.m], 0];
-  return ["case", ["==", ["get", "be"], 1], BERLIN, ["==", ["get", "ok"], 0], OFF,
+  const far = lim === Infinity ? false : ["any", ["!", ["has", "t"]], [">", ["get", "t"], lim]];
+  return ["case", ["==", ["get", "be"], 1], BERLIN, far, OFF,
     ["step", v, "rgba(0,0,0,0)", ...BINS.flatMap((b, i) => [b, RAMP[i]])]];
 }
 function legend(r) {
@@ -67,7 +69,7 @@ function zoomTo(a) {
 }
 
 async function init() {
-  const [fc, stats] = await Promise.all([fetch("data/cells.geojson?v=1").then(r => r.json()), fetch("data/stats.json?v=1").then(r => r.json())]);
+  const [fc, stats] = await Promise.all([fetch("data/cells.geojson?v=2").then(r => r.json()), fetch("data/stats.json?v=2").then(r => r.json())]);
   S.fc = fc; S.stats = stats;
   const map = (S.map = new maplibregl.Map({ container: "map", style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
     center: [13.4, 52.45], zoom: 6.9, attributionControl: false }));
