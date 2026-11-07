@@ -1,0 +1,45 @@
+name: build-and-deploy
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11", cache: pip }
+      - run: pip install -r requirements.txt
+      - uses: actions/cache@v4
+        with:
+          path: input
+          key: input-${{ github.run_id }}
+          restore-keys: input-
+      - name: pipeline
+        run: |
+          mkdir -p logs input build
+          python pipeline/a_cells.py 2>&1 | tee logs/a_cells.log
+          python pipeline/b_transit.py 2>&1 | tee logs/b_transit.log
+          python pipeline/c_web.py 2>&1 | tee logs/c_web.log
+          cp logs/*.log docs/data/ || true
+        shell: bash -eo pipefail {0}
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: docs }
+      - uses: actions/upload-artifact@v4
+        with: { name: site, path: docs }
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: { name: github-pages, url: "${{ steps.d.outputs.page_url }}" }
+    steps:
+      - id: d
+        uses: actions/deploy-pages@v4
