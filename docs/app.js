@@ -73,7 +73,7 @@ async function init() {
   const [fc, stats] = await Promise.all([fetch("data/cells.geojson?v=2").then(r => r.json()), fetch("data/stats.json?v=2").then(r => r.json())]);
   S.fc = fc; S.stats = stats;
   const map = (S.map = new maplibregl.Map({ container: "map", style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
-    center: [13.4, 52.45], zoom: 6.9, attributionControl: false }));
+    bounds: [[11.27, 51.36], [14.77, 53.56]], fitBoundsOptions: { padding: 30 }, attributionControl: false }));
   map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: "Zensus 2022 © Destatis · VG250 © GeoBasis-DE/BKG · VBB" }), "bottom-right");
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
   const setup = () => {
