@@ -1,7 +1,7 @@
 /* Homeoffice rettet das Dorf? · #30DayMapChallenge 2026 Day 9 */
-const RAMP = ["#e4efe8", "#bfdccd", "#8fc3ab", "#5ea589", "#33836a", "#1f6f5c", "#0f4f40"];
+const RAMP = ["#c9e3d3", "#9fceb4", "#6fb294", "#469476", "#2a785f", "#16604c", "#0a4436"];
 const BINS = [1, 5, 15, 40, 100, 250, 600];                          // empty homes per km²
-const OFF = "#e9e8e3", BERLIN = "#cfd6dc";
+const OFF = "#e4e2dc", NONE = "#f3f7f4", BERLIN = "#cfd6dc";
 const $ = s => document.querySelector(s);
 const fmt = n => Math.round(n).toLocaleString("en-GB");
 const S = { ho: 3, hr: 16, m: "v", fc: null, map: null, sel: null };
@@ -54,11 +54,12 @@ function color(lim = maxMinutes()) {
   const v = ["coalesce", ["get", S.m], 0];
   const far = lim === Infinity ? false : ["any", ["!", ["has", "t"]], [">", ["get", "t"], lim]];
   return ["case", ["==", ["get", "be"], 1], BERLIN, far, OFF,
-    ["step", v, "rgba(0,0,0,0)", ...BINS.flatMap((b, i) => [b, RAMP[i]])]];
+    ["step", v, NONE, ...BINS.flatMap((b, i) => [b, RAMP[i]])]];
 }
 function legend(r) {
   $("#legend").innerHTML = `<b>${S.m === "v" ? "Empty homes" : "Empty homes on the market"} per km²</b>
     <div class="ramp">${RAMP.map(c => `<b style="background:${c}"></b>`).join("")}</div><div class="ends"><span>1</span><span>600+</span></div>
+    <div class="it"><i style="background:${NONE};border:1px solid #d5ddd8"></i>in reach, no empty homes counted</div>
     <div class="it"><i style="background:${OFF}"></i>too far for this scenario</div><div class="it"><i style="background:${BERLIN}"></i>Berlin</div>`;
 }
 function zoomTo(a) {
