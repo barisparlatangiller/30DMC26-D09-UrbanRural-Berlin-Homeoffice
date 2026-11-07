@@ -21,7 +21,7 @@ fs.mkdirSync(FR, { recursive: true });
 const ARGS = ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--disable-dev-shm-usage"];
 const ready = p => p.waitForFunction(() => typeof S !== "undefined" && S.map && S.map.getLayer("c") && S.map.loaded(), null, { timeout: 120000 });
 const idle = p => p.evaluate(() => new Promise(r => { S.map.once("idle", () => setTimeout(r, 20)); S.map.triggerRepaint(); setTimeout(r, 5000); }));
-const lim = ho => (ho >= 5 ? 400 : HR * 60 / (2 * (5 - ho) * 4.33));
+const lim = ho => (ho >= 5 ? Infinity : HR * 60 / (2 * (5 - ho) * 4.33));
 
 let br = await chromium.launch({ args: ARGS });
 {
@@ -42,8 +42,8 @@ const CSS = `
   .v .s { font-size: 27px; color: #56605c; line-height: 1.3; max-width: 940px; }
   .v.bot { bottom: 44px; background: rgba(255,255,255,.95); border: 1px solid #e3e6e2; border-radius: 16px; padding: 22px 26px; box-shadow: 0 10px 30px -14px rgba(0,0,0,.3); }
   .v .days { display: flex; gap: 10px; margin-bottom: 14px; }
-  .v .days i { flex: 1; height: 44px; border-radius: 9px; background: #e9e8e3; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 19px; font-weight: 600; color: #8b948f; }
-  .v .days i.h { background: #1f6f5c; color: #fff; }
+  .v .days i { flex: 1; height: 58px; flex-direction: column; line-height: 1.1; border-radius: 9px; background: #e9e8e3; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 19px; font-weight: 600; color: #8b948f; }
+  .v .days i.h { background: #1f6f5c; color: #fff; } .v .days i small { font-size: 14px; font-weight: 500; opacity: .85; }
   .v .row { display: flex; justify-content: space-between; align-items: baseline; }
   .v .row b { font-size: 58px; letter-spacing: -.03em; color: #1f6f5c; font-variant-numeric: tabular-nums; }
   .v .row span { font-size: 22px; color: #56605c; text-align: right; line-height: 1.3; }
@@ -61,7 +61,7 @@ async function openPage() {
     document.body.insertAdjacentHTML("beforeend", `<div class="v top"><div class="eb">#30DayMapChallenge · Day 9 · Urban–rural · Berlin–Brandenburg</div>
       <h1>Homeoffice rettet<br>das Dorf?</h1><div class="s">Empty homes in Brandenburg that are close enough to central Berlin by train, if you accept 16 hours of commuting a month.</div></div>
       <div class="v bot"><div class="days" id="vd"></div><div class="row"><b id="vn">0</b><span id="vt"></span></div></div>`);
-    S.map.resize(); S.map.jumpTo({ center: [13.35, 52.42], zoom: 7.45 });
+    S.map.resize(); S.map.fitBounds([[11.27, 51.36], [14.77, 53.56]], { padding: { top: 300, bottom: 250, left: 30, right: 30 }, animate: false });
   });
   await idle(page); await page.waitForTimeout(1500);
   return page;
@@ -74,7 +74,7 @@ const grow = (ho, a, b, n) => { for (let i = 1; i <= n; i++) { const e = 0.5 - 0
 hold(2, lim(2), 18);
 grow(3, lim(2), lim(3), 14); hold(3, lim(3), 22);
 grow(4, lim(3), lim(4), 16); hold(4, lim(4), 24);
-grow(5, lim(4), lim(5), 20); hold(5, lim(5), 18);
+grow(5, lim(4), 300, 20); hold(5, lim(5), 18);
 for (let i = 0; i < 42; i++) plan.push({ ho: 5, l: lim(5), card: true });
 
 let n = 0, info = null;
@@ -84,9 +84,9 @@ for (const fr of plan) {
     S.limOverride = fr.l; S.ho = fr.ho; S.hr = HR;
     const r = compute();
     S.map.setPaintProperty("c", "fill-color", color(fr.l));
-    document.querySelector("#vd").innerHTML = ["Mon", "Tue", "Wed", "Thu", "Fri"].map((d, i) => `<i class="${i >= 5 - fr.ho ? "h" : ""}">${i >= 5 - fr.ho ? "home" : d}</i>`).join("");
+    document.querySelector("#vd").innerHTML = ["Mon", "Tue", "Wed", "Thu", "Fri"].map((d, i) => `<i class="${i >= 5 - fr.ho ? "h" : ""}">${d}<small>${i >= 5 - fr.ho ? "home" : "office"}</small></i>`).join("");
     document.querySelector("#vn").textContent = Math.round(r.n).toLocaleString("en-GB");
-    document.querySelector("#vt").innerHTML = fr.ho >= 5 ? `empty homes · ${fr.ho} home-office days<br>distance no longer matters`
+    document.querySelector("#vt").innerHTML = fr.l === Infinity ? `empty homes · ${fr.ho} home-office days<br>distance no longer matters`
       : `empty homes within ${Math.round(fr.l)} min<br>${fr.ho} home-office days a week`;
     if (fr.card && !document.querySelector(".card")) {
       document.querySelector(".v.bot").style.display = "none";
